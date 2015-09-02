@@ -3,6 +3,12 @@
  *
  * DO NOT ADD ANY SUBSYSTEM WITHOUT EXPLICIT ACKS FROM CGROUP MAINTAINERS.
  */
+
+/*
+ * This file *must* be included with SUBSYS() defined.
+ * SUBSYS_TAG() is a noop if undefined.
+ */
+
 #ifndef SUBSYS_TAG
 #define __TMP_SUBSYS_TAG
 #define SUBSYS_TAG(_x)

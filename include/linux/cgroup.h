@@ -28,6 +28,18 @@
 struct cgroup_root;
 struct cgroup_subsys;
 struct cgroup;
+/*
+ * All weight knobs on the default hierarhcy should use the following min,
+ * default and max values.  The default value is the logarithmic center of
+ * MIN and MAX and allows 100x to be expressed in both directions.
+ */
+#define CGROUP_WEIGHT_MIN		1
+#define CGROUP_WEIGHT_DFL		100
+#define CGROUP_WEIGHT_MAX		10000
+
+/* a css_task_iter should be treated as an opaque object */
+struct css_task_iter {
+	struct cgroup_subsys		*ss;
 
 extern int cgroup_init_early(void);
 extern int cgroup_init(void);
@@ -50,6 +62,38 @@ enum cgroup_subsys_id {
 };
 #undef SUBSYS_TAG
 #undef SUBSYS
+
+bool css_has_online_children(struct cgroup_subsys_state *css);
+struct cgroup_subsys_state *css_from_id(int id, struct cgroup_subsys *ss);
+struct cgroup_subsys_state *cgroup_get_e_css(struct cgroup *cgroup,
+					     struct cgroup_subsys *ss);
+struct cgroup_subsys_state *css_tryget_online_from_dir(struct dentry *dentry,
+						       struct cgroup_subsys *ss);
+
+bool cgroup_is_descendant(struct cgroup *cgrp, struct cgroup *ancestor);
+int cgroup_attach_task_all(struct task_struct *from, struct task_struct *);
+int cgroup_transfer_tasks(struct cgroup *to, struct cgroup *from);
+
+int cgroup_add_dfl_cftypes(struct cgroup_subsys *ss, struct cftype *cfts);
+int cgroup_add_legacy_cftypes(struct cgroup_subsys *ss, struct cftype *cfts);
+int cgroup_rm_cftypes(struct cftype *cfts);
+
+char *task_cgroup_path(struct task_struct *task, char *buf, size_t buflen);
+int cgroupstats_build(struct cgroupstats *stats, struct dentry *dentry);
+int proc_cgroup_show(struct seq_file *m, struct pid_namespace *ns,
+		     struct pid *pid, struct task_struct *tsk);
+
+void cgroup_fork(struct task_struct *p);
+extern int cgroup_can_fork(struct task_struct *p,
+			   void *ss_priv[CGROUP_CANFORK_COUNT]);
+extern void cgroup_cancel_fork(struct task_struct *p,
+			       void *ss_priv[CGROUP_CANFORK_COUNT]);
+extern void cgroup_post_fork(struct task_struct *p,
+			     void *old_ss_priv[CGROUP_CANFORK_COUNT]);
+void cgroup_exit(struct task_struct *p);
+
+int cgroup_init_early(void);
+int cgroup_init(void);
 
 /*
  * Per-subsystem/per-cgroup state maintained by the system.  This is the
@@ -932,7 +976,13 @@ int subsys_cgroup_allow_attach(struct cgroup_subsys_state *css,
 static inline int cgroup_init_early(void) { return 0; }
 static inline int cgroup_init(void) { return 0; }
 static inline void cgroup_fork(struct task_struct *p) {}
-static inline void cgroup_post_fork(struct task_struct *p) {}
+static inline int cgroup_can_fork(struct task_struct *p,
+				  void *ss_priv[CGROUP_CANFORK_COUNT])
+{ return 0; }
+static inline void cgroup_cancel_fork(struct task_struct *p,
+				      void *ss_priv[CGROUP_CANFORK_COUNT]) {}
+static inline void cgroup_post_fork(struct task_struct *p,
+				    void *ss_priv[CGROUP_CANFORK_COUNT]) {}
 static inline void cgroup_exit(struct task_struct *p) {}
 
 static inline int cgroupstats_build(struct cgroupstats *stats,

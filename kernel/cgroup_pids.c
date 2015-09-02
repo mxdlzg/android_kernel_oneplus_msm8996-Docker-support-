@@ -173,11 +173,11 @@ static int pids_can_attach(struct cgroup_subsys_state *css,
 		struct pids_cgroup *old_pids;
 
 		/*
-		 * Grab a ref to each task's css. We don't drop the ref until
-		 * we either fail and hit ->cancel_attach() or succeed and hit
-		 * ->attach().
+		 * No need to pin @old_css between here and cancel_attach()
+		 * because cgroup core protects it from being freed before
+		 * the migration completes or fails.
 		 */
-		old_css = task_get_css(task, pids_cgrp_id);
+		old_css = task_css(task, pids_cgrp_id);
 		old_pids = css_pids(old_css);
 
 		pids_charge(pids, 1);
@@ -202,6 +202,7 @@ static void pids_cancel_attach(struct cgroup_subsys_state *css,
 
 		pids_charge(old_pids, 1);
 		pids_uncharge(pids, 1);
+<<<<<<< HEAD
 		css_put(old_css);
 	}
 }
@@ -215,6 +216,11 @@ static void pids_attach(struct cgroup_subsys_state *css,
 		css_put(task_css(task, pids_cgrp_id));
 }
 
+=======
+	}
+}
+
+>>>>>>> 8bdc69b76401 (Merge branch 'for-4.3' of git://git.kernel.org/pub/scm/linux/kernel/git/tj/cgroup)
 static int pids_can_fork(struct task_struct *task, void **priv_p)
 {
 	struct cgroup_subsys_state *css;
@@ -354,7 +360,10 @@ static struct cftype pids_files[] = {
 struct cgroup_subsys pids_cgrp_subsys = {
 	.css_alloc	= pids_css_alloc,
 	.css_free	= pids_css_free,
+<<<<<<< HEAD
 	.attach		= pids_attach,
+=======
+>>>>>>> 8bdc69b76401 (Merge branch 'for-4.3' of git://git.kernel.org/pub/scm/linux/kernel/git/tj/cgroup)
 	.can_attach 	= pids_can_attach,
 	.cancel_attach 	= pids_cancel_attach,
 	.can_fork	= pids_can_fork,
