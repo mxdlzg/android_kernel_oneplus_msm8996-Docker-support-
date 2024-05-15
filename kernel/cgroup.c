@@ -185,6 +185,8 @@ static int need_forkexit_callback __read_mostly;
 
 /* Ditto for the can_fork callback. */
 static unsigned long have_canfork_callback __read_mostly;
+static unsigned long have_fork_callback __read_mostly;
+static unsigned long have_exit_callback __read_mostly;
 
 static struct cftype cgroup_dfl_base_files[];
 static struct cftype cgroup_legacy_base_files[];
@@ -375,6 +377,24 @@ static int notify_on_release(const struct cgroup *cgrp)
 #define for_each_subsys(ss, ssid)					\
 	for ((ssid) = 0; (ssid) < CGROUP_SUBSYS_COUNT &&		\
 	     (((ss) = cgroup_subsys[ssid]) || true); (ssid)++)
+
+/**
+ * for_each_subsys_which - filter for_each_subsys with a bitmask
+ * @ss: the iteration cursor
+ * @ssid: the index of @ss, CGROUP_SUBSYS_COUNT after reaching the end
+ * @ss_maskp: a pointer to the bitmask
+ *
+ * The block will only run for cases where the ssid-th bit (1 << ssid) of
+ * mask is set to 1.
+ */
+#define for_each_subsys_which(ss, ssid, ss_maskp)			\
+	if (!CGROUP_SUBSYS_COUNT) /* to avoid spurious gcc warning */	\
+		(ssid) = 0;						\
+	else								\
+		for_each_set_bit(ssid, ss_maskp, CGROUP_SUBSYS_COUNT)	\
+			if (((ss) = cgroup_subsys[ssid]) && false)	\
+				break;					\
+			else
 
 /* iterate across the hierarchies */
 #define for_each_root(root)						\
